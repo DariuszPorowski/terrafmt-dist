@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# Visit https://goreleaser.com for documentation on how to customize this behavior.
+---
+version: 2
+
+project_name: terrafmt
+
+report_sizes: true
+
+# before:
+#   hooks:
+#     - go mod download
+
+builds:
+  - id: terrafmt
+    binary: terrafmt
+    env:
+      - CGO_ENABLED=0
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - "386"
+      - arm
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: "386"
+      - goos: windows
+        goarch: arm
+        goarm: "6"
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/katbyte/terrafmt/lib/version.GitCommit={{ .Commit }}
+      - -X github.com/katbyte/terrafmt/lib/version.Version={{ .Version }}
+
+archives:
+  - id: terrafmt
+    ids:
+      - terrafmt
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    files:
+      - none*
+
+checksum:
+  algorithm: sha256
+  name_template: "{{ .ProjectName }}_SHA256SUMS.txt"
+
+sboms:
+  - id: archive
+    artifacts: archive
+  - id: source
+    artifacts: source
+  - id: binary
+    artifacts: binary
+
+changelog:
+  disable: false
+  use: github
+
+release:
+  github:
+    owner: DariuszPorowski
+    name: terrafmt-dist
+  # name_template: "{{ .Tag }}"
+  # replace_existing_draft: true
+  # replace_existing_artifacts: true
